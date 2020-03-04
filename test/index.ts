@@ -58,20 +58,139 @@ describe("Promise",()=>{
         // @ts-ignore
         promise.then(success);
     })
-})
 
-/*
-describe("Chai 的使用",()=>{
-    it("可以测试相等",()=>{
-        assert(1 === 1);
-        
-        // 因为我们用的是 ts, 你在任何一行在上 // @ts-ignore 那么ts就不会管这行符合不符合逻辑
-        // 之前如果不加会报错， 因为 2 永远不等于 3 ，你这样写是没意义的
-        // 由于你是在测试，所以经常会写这种代码
-
+    it("promise.then(null,fail) 重的 fail 会在 reject 被调用的时候执行",(done)=>{
+        const fail = sinon.fake();
+        const promise = new Promise((resolve,reject)=>{
+            // 该函数没有执行
+            assert.isFalse(fail.called);
+            reject();
+            setTimeout(() => {
+                // 该函数执行了
+                assert.isTrue(fail.called);
+                done();
+            });
+        })
         // @ts-ignore
-        assert( 2 === 3)
+        promise.then(null,fail);
     })
-})
-*/
 
+    it("2.2.1",()=>{
+        const promise = new Promise((resolve,reject)=>{
+            resolve();
+        })
+        promise.then(false,null);
+        assert(1 === 1);
+    })
+
+    it("2.2.2",(done)=>{
+        const success = sinon.fake();
+        const promise = new Promise((resolve,reject)=>{
+            assert.isFalse(success.called); 
+            resolve(233);
+            resolve(2333);
+            setTimeout(() => {
+                assert(promise.state === "fulfilled")
+                assert.isTrue(success.called); 
+                assert.isTrue(success.calledOnce); 
+                assert(success.calledWith(233));
+                done();
+            },0);
+        })
+        promise.then(success);
+    })
+
+    it("2.2.3",(done)=>{
+        const fail = sinon.fake();
+        const promise = new Promise((resolve,reject)=>{
+            assert.isFalse(fail.called); 
+            reject(233);
+            reject(2333);
+            setTimeout(() => {
+                assert(promise.state === "rejected")
+                assert.isTrue(fail.called); 
+                assert.isTrue(fail.calledOnce); 
+                assert(fail.calledWith(233));
+                done();
+            },0);
+        })
+        promise.then(null,fail);
+    })
+
+    it("2.2.4 在我的代码执行完之前，不得调用 then 后面的两个函数 success",(done)=>{
+        const success = sinon.fake();
+        const promise = new Promise((resolve)=>{
+            resolve();
+        })
+        promise.then(success);
+        assert.isFalse(success.called);
+        setTimeout(() => {
+            assert.isTrue(success.called);
+            done();
+        }, 0);
+    })
+
+    it("2.2.4 在我的代码执行完之前，不得调用 then 后面的两个函数 fail",(done)=>{
+        const fail = sinon.fake();
+        const promise = new Promise((resolve,reject)=>{
+            reject();
+        })
+        promise.then(null,fail);
+        assert.isFalse(fail.called);
+        setTimeout(() => {
+            assert.isTrue(fail.called);
+            done();
+        }, 0);
+    })
+
+    it("2.2.5 不带入额外的this",(done)=>{
+        const fn = sinon.fake();
+        const promise = new Promise((resolve)=>{
+            resolve();
+        })
+        promise.then(function(){
+            "use strict";
+            assert(this === undefined);
+            done();
+        });
+    })
+
+    it("2.2.6 then可以在同一个promise里被多次调用(链式调用)",(done)=>{
+        const promise = new Promise((resolve)=>{
+            resolve();
+        })
+        const callbacks = [sinon.fake(),sinon.fake(),sinon.fake()]
+        promise.then(callbacks[0]);
+        promise.then(callbacks[1]);
+        promise.then(callbacks[2]);
+        setTimeout(() => {
+            assert(callbacks[0].called);
+            assert(callbacks[1].called);
+            assert(callbacks[2].called);
+            assert(callbacks[1].calledAfter(callbacks[0]));
+            assert(callbacks[2].calledAfter(callbacks[1]));
+
+            done();
+        });
+    })
+
+    it("2.2.6.2 then可以在同一个promise里被多次调用(链式调用) reject",(done)=>{
+        const promise = new Promise((resolve,reject)=>{
+            reject();
+        })
+        const callbacks = [sinon.fake(),sinon.fake(),sinon.fake()]
+        promise.then(null,callbacks[0]);
+        promise.then(null,callbacks[1]);
+        promise.then(null,callbacks[2]);
+        setTimeout(() => {
+            assert(callbacks[0].called);
+            assert(callbacks[1].called);
+            assert(callbacks[2].called);
+            assert(callbacks[1].calledAfter(callbacks[0]));
+            assert(callbacks[2].calledAfter(callbacks[1]));
+
+            done();
+        });
+    })
+    
+})
