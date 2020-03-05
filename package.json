@@ -4,11 +4,14 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "mocha -r ts-node/register test/**/*.ts"
+    "test": "mocha -r ts-node/register test/**/*.ts",
+    "test_browser": "mocha -r ts-node/register test/index.ts",
+    "test_node": "mocha -r ts-node/register test/index_node.ts"
   },
   "devDependencies": {
     "@types/chai": "^4.2.10",
     "@types/mocha": "^7.0.2",
+    "@types/node": "^12.7.3",
     "@types/sinon": "^7.5.2",
     "@types/sinon-chai": "^3.2.3",
     "chai": "^4.2.0",

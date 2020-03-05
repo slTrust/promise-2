@@ -5,12 +5,17 @@ class Promise2{
     resolve(result){
         if(this.state !== "pending") return;
         this.state = "fulfilled";
-        setTimeout(() => {
+        process.nextTick(() => {
             // 遍历 callbacks 调用所有的 handle[0]
             this.callbacks.forEach(handle=>{
                 if(typeof handle[0] === "function"){
-                    // x 是之前成功的返回值
-                    const x = handle[0].call(undefined,result);
+                    let x;
+                    try {
+                        // x 是之前成功的返回值
+                        x = handle[0].call(undefined,result);
+                    } catch (e) {
+                        return handle[2].reject(e);
+                    }
                     handle[2].resolveWith(x);
                 }
             })  
@@ -19,11 +24,16 @@ class Promise2{
     reject(reason){
         if(this.state !== "pending") return;
         this.state = "rejected";
-        setTimeout(() => {
+        process.nextTick(() => {
             this.callbacks.forEach(handle=>{
                 if(typeof handle[1] === "function"){
-                    // x 是之前失败的返回值
-                    const x = handle[1].call(undefined,reason);
+                    let x;
+                    try {
+                        // x 是之前失败的返回值
+                        x = handle[1].call(undefined,reason);
+                    } catch (e) {
+                        return handle[2].reject(e);
+                    }
                     handle[2].resolveWith(x);
                 }
             })
