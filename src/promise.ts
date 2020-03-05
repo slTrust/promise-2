@@ -5,12 +5,17 @@ class Promise2{
     resolve(result){
         if(this.state !== "pending") return;
         this.state = "fulfilled";
-        setTimeout(() => {
+        nextTick(() => {
             // 遍历 callbacks 调用所有的 handle[0]
             this.callbacks.forEach(handle=>{
                 if(typeof handle[0] === "function"){
-                    // x 是之前成功的返回值
-                    const x = handle[0].call(undefined,result);
+                    let x;
+                    try {
+                        // x 是之前成功的返回值
+                        x = handle[0].call(undefined,result);
+                    } catch (e) {
+                        return handle[2].reject(e);
+                    }
                     handle[2].resolveWith(x);
                 }
             })  
@@ -19,11 +24,16 @@ class Promise2{
     reject(reason){
         if(this.state !== "pending") return;
         this.state = "rejected";
-        setTimeout(() => {
+        nextTick(() => {
             this.callbacks.forEach(handle=>{
                 if(typeof handle[1] === "function"){
-                    // x 是之前失败的返回值
-                    const x = handle[1].call(undefined,reason);
+                    let x;
+                    try {
+                        // x 是之前失败的返回值
+                        x = handle[1].call(undefined,reason);
+                    } catch (e) {
+                        return handle[2].reject(e);
+                    }
                     handle[2].resolveWith(x);
                 }
             })
@@ -97,3 +107,17 @@ class Promise2{
 }
 
 export default Promise2
+
+function nextTick(fn){
+    if( process !== undefined && typeof process.nextTick === 'function'){
+        return process.nextTick(fn);
+    }else{
+        var counter = 1
+        var observer = new MutationObserver(fn)
+        var textNode = document.createTextNode(String(counter))
+        observer.observe(textNode, {characterData: true})
+        // 更改文本内容触发 dom树更新 触发回调
+        counter = counter + 1
+        textNode.data = String(counter)
+    }
+}
